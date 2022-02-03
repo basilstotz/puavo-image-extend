@@ -70,8 +70,8 @@ if [ $# -ne 2 ]; then
 fi
 
 
-DATA=$1
-if ! test -d $DATA; then
+DATA_DIR=$1
+if ! test -d $DATA_DIR/parts.d; then
         echo "error: datadir not found"
         exit 1
 fi
@@ -98,18 +98,21 @@ if test $? -ne 0;then
     echo "could not mount \"$SOURCE\""
     exit 1
 fi
-CHROOT=(basename -s .img $SOURCE)
+CHROOT=$(basename -s .img $SOURCE)
+
+echo $CHROOT
 
 mkdir -p $CHROOT/install
-cp -r $DATADIR/* $CHROOT/install/
+
+
+cp -r $DATA_DIR/* $CHROOT/install/
 
 generic-dir-patch $CHROOT  > ./log/last-build.log
-if test $? -ne 0;then
+RET="$?"
+if test $RET -ne 0;then
     echo "could not patch \"$SOURCE\""
     exit 1
 fi
-
-
 
 
 ###################################################################################
@@ -144,6 +147,7 @@ mksquashfs -noappend -no-recovery $CHROOT ${IMAGE}.img
 
 on_exit
 
-exit $RET
+exit 0
+
 
 	
