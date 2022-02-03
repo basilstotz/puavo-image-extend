@@ -22,12 +22,12 @@ These things are achieved by patching the original PuavoOS image using this soft
 ## Quick Start
 
 1) Clone this repo
-2) Replace the public keys in *config/parts.d/gnupg/gnupg/<images.yourdomain.tld>/pks/* with the public keys form the identity you used for signing the packages.
+2) Replace the public keys in *config/parts.d/gnupg/gnupg/images.yourdomain.tld/pks/* with the public keys form the identity you used for signing the packages.
 3) Add the names of all your packes you want to use, as a space separated list in *config/parts.d/puavoconf/packages.lis*.
 4) Run *make install* to install the binaries in *~/bin/*
-5) Run *puavo-ing-patch config <your_source_image.img>*
+5) Run *puavo-ing-patch config your_source_image.img*
 6) Install the new image on a laptop (either directly or via your image/package server)
 7) Set (on PuavoWeb) *puavo.images.servers* to your image server.
-8) Set (on PuavoWeb) for each wanted package *puavo.pkg.<pavkagename>* to *latest*
+8) Set (on PuavoWeb) for each wanted package *puavo.pkg.package_name* to *latest*
 9) Reboot client.
 
