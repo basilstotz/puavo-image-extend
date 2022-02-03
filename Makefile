@@ -1,6 +1,4 @@
-install:
-	mkdir -p ~/bin/
-	cp ./bin/* ~/bin/.
 
-image:
-	puavo-image-patch ./config 
+phony build:
+build:
+	echo sudo ./bin/puavo-image-patch ./config  my_source_image.img 
