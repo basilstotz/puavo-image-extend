@@ -19,4 +19,11 @@ In order to
 
 These things are achieved by patching the original PuavoOS image using this software here.
 
-### 
+## Quick Start
+
+1) Clone this repo
+2) Replace the public keys in *config/parts.d/gnupg/gnupg/<images.yourdomain.tld>/pks/* with the public keys form the identity you used for signing the packages.
+3) Add the names of all your packes you want to use, as a space separated list in *config/parts.d/puavoconf/packages.lis*.
+4) Run *make install* to install the binaries in *~/bin/*
+5) Run *puavo-ing-patch config <your_source_image.img>*
+
