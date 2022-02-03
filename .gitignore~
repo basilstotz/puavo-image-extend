@@ -1,0 +1,5 @@
+.gitignore
+**/gnupg/**
+*.img
+**/*.img
+mnt

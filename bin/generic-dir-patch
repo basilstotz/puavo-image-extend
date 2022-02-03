@@ -24,7 +24,7 @@ echo "*                                                            *" 1>&2
 echo "*                     Hello Chroot                           *" 1>&2
 echo "*                                                            *" 1>&2
 echo "**************************************************************" 1>&2
-UPDATED=1
+UPDATED=0
 ERROR=0
 
 CHECKLIST=""
@@ -80,6 +80,7 @@ if test -d /install/lists.d;then
         echo "                         lists                               *" 1>&2
         echo "**************************************************************" 1>&2
         echo "$LISTS :"							      1>&2
+        
         apt-get update
 	UPDATED=0
         PAKS=""
@@ -123,9 +124,6 @@ if test -d /install/parts.d;then
         echo "**************************************************************" 1>&2
         echo "                         parts                               *" 1>&2
         echo "**************************************************************" 1>&2
-	if test $UPDATED = 1;then
-	    apt-get update
-	fi
         for P in $(ls /install/parts.d/);do
             if test -x /install/parts.d/$P/install.sh;then
                  echo -n $P                                                   1>&2
@@ -137,9 +135,6 @@ if test -d /install/parts.d;then
   	         check $P                                                     1>&2
             fi
         done
-        echo -n "*parts dependencies*"                                           1>&2
-	apt-get -y -f install
-	check "*parts dependencies*"                                          1>&2
     fi
 fi
 
