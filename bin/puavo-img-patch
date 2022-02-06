@@ -1,9 +1,9 @@
 #!/bin/sh
 
 
-if ! test $(id --user) = 0;then
-    exec sudo $0 $@
-fi
+#if ! test $(id --user) = 0;then
+#    exec sudo $0 $@
+#fi
 
 on_exit(){
     #generic-img-mount --umount $SOURCE
@@ -15,19 +15,22 @@ CURRENT_IMAGE=$(cat /etc/puavo-image/name)
 OSNAME=$(echo $CURRENT_IMAGE|cut -d- -f1-2)
 CLASS=$(echo $CURRENT_IMAGE|cut -d- -f3)
 
+REPOSITORY=$(puavo-conf puavo.image.servers|xargs|cut -d\  -f1)
+GNUPG=""
 
 
 while [ $# -gt 0 ]; do
     case $1 in
 	-h|--help)
 	    shift
-	    echo "Usage: $(basename $0) [options] datadir source_image"
+	    echo "Usage: $(basename $0) source_image"
+	    echo "       $(basename $0) [options]"
 	    echo
 	    echo "Patch a PuavoOS image and compress a new image." 
-	    echo
- 	    echo "    -o, --osname ($OSNAME)"
-	    echo "    -c, --class ($CLASS)"
-	    echo "    -d, --dist"
+ 	    echo "    -g, --gnupg <directory>"
+	    echo "    -r, --repository <hostname> ($REPOSITORY)"
+ 	    echo "    -o, --osname <osname> ($OSNAME)"
+	    echo "    -c, --class <lcass> ($CLASS)"
  	    echo "    -h, --help"
 	    echo
 	    exit 0
@@ -44,9 +47,14 @@ while [ $# -gt 0 ]; do
 	    CLASS=$1
 	    shift
 	    ;;
-	-d|--dist)
+	-r|--repository)
 	    shift
-	    DIST=$1
+	    REPOSITORY=$1
+	    shift
+	    ;;
+	-g|--gnupg)
+	    shift
+	    GNUPG=$1
 	    shift
 	    ;;
 	--)
@@ -63,26 +71,85 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+#setup config
+if test -z "$REPOSITORY"; then
+    if test -f config/parts.d/gnugpg/repository; then
+	REPOSITORY=$(cat config/parts.d/gnugpg/repository)
+    else
+	echo "error: repository not set. run: $(basename $0) --repository <repository>. "
+	exit 1
+    fi
+else
+    mkdir -p config/parts.d/gnugpg
+    echo $REPOSITORY > config/parts.d/gnugpg/repository
+fi
+
+
+if test -z "$GNUPG"; then
+    if ! test -d config/parts.d/gnugpg/pkg/; then
+	echo "error: public keys not set. run: $(basename $0) --gnupg <dir>. "
+	exit 1
+    fi
+else
+    mkdir -p config/parts.d/gnugpg/pkg
+    cp $GNUPG/pubring.kbx config/parts.d/gnugpg/pkg/.
+    cp $GNUPG/trustdb.gpg config/parts.d/gnugpg/pkg/.
+fi
+
+if test -z "$OSNAME"; then
+    if test -f config/options.d/osname; then
+       OSNAME=$(cat config/options.d/osname)
+    fi
+else
+    mkdir -p config/options.d
+    echo $OSNAME > config/options.d/osname
+fi
+
+if test -z "$CLASS"; then
+    if test -f config/options.d/class; then
+       OSNAME=$(cat config/options.d/class)
+    fi
+else
+    mkdir -p config/options.d
+    echo $CLASS > config/options.d/class
+fi
+
+if test -f packages.puavo; then
+    cp packages.puavo config/parts.d/puavoconf/packages.list
+else
+    echo "info: you have no packages.puavo file, you will not be able to use puavo-pkg"
+fi
+
+if test -f packages.debian; then
+    mkdir -p config/lists.d
+    cp packages.debian config/lists.d/packages.list
+else
+    echo "info: you have no packages.debian file, you will not install any packages"
+fi
+
+
+
+
+echo $OSNAME $CLASS $REPOSITORY 
+
+exit
+
+
 # some paramter checks
-if [ $# -ne 2 ]; then
-    echo  "invalid number of arguments ($#), expected 2"
+if [ $# -ne 1 ]; then
+    echo  "invalid number of arguments ($#), expected 1"
     exit 1
 fi
 
 
-DATA_DIR=$1
-if ! test -d $DATA_DIR/parts.d; then
-        echo "error: datadir not found"
-        exit 1
-fi
 
-SOURCE=$2
+SOURCE=$1
 if ! test -f $SOURCE; then
 	echo "error: source file not found"
 	exit 1
 fi	
-
 DIST=$(basename $SOURCE|cut -d- -f4)
+
 
 ##################################################################################
 ###################################################################################
