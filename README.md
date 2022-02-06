@@ -8,7 +8,7 @@ At the moment tiny patch is needed
 
 ## What is needed to use custom packages?
 
-Of course we need an instance of a webserver to publicly offer our packages/images to the clients. 
+Of course we need an instance of a webserver to publicly [[fsdafsdf[Home]] offer our packages/images to the clients. 
 
 On the client side we need the following: 
 
