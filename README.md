@@ -2,7 +2,7 @@
 
 This document describes the steps for using PuavoOS (https://puavo.org) with (self built) PuavoOS packages.
 
-Ideally this should work out of the box with a vanilla PuavoOS image. Hopefully this will be case in the future (maybe using a puavo.org package store or a similar solutions ...)
+Ideally this should work out of the box with a vanilla P https://github.com/basilstotz/puavo-thirdparty/wiki/Image-Repository uavoOS image. Hopefully this will be case in the future (maybe using a puavo.org package store or a similar solutions ...)
 
 At the moment tiny patch is needed 
 
