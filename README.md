@@ -2,13 +2,13 @@
 
 This document describes the steps for using PuavoOS (https://puavo.org) with (self built) PuavoOS packages.
 
-Ideally this should work out of the box with a vanilla PuavoOS image. Hopefully this will be case in the future (maybe using a puavo.org package store or a similar solutions ...)
+Ideally this should work out of the box with a vanilla P https://github.com/basilstotz/puavo-thirdparty/wiki/Image-Repository uavoOS image. Hopefully this will be case in the future (maybe using a puavo.org package store or a similar solutions ...)
 
 At the moment tiny patch is needed 
 
 ## What is needed to use custom packages?
 
-Of course we need an instance of a webserver to publicly offer our packages/images to the clients. 
+Of course we need an instance of a webserver to publicly [[fsdafsdf[Home]] offer our packages/images to the clients. 
 
 On the client side we need the following: 
 
