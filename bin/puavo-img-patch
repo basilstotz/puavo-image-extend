@@ -308,7 +308,7 @@ exit
 
 # some paramter checks
 if [ $# -ne 1 ]; then
-    echo  "invalid number of arguments ($#), expected 1"
+    echo ch "invalid number of arguments ($#), expected 1"
     exit 1
 fi
 
@@ -318,9 +318,16 @@ SOURCE=$1
 if ! test -f $SOURCE; then
 	echo "error: source file not found"
 	exit 1
-fi	
-DIST=$(basename $SOURCE|cut -d- -f4)
-
+else
+    if ! mount $SOURCE /mnt/; then
+	echo "error: could not mount $SOURCE"
+	exit 1
+    fi    
+    imagename=$(cat /mnt/etc/puavo-image/name)
+    umount /mnt
+    
+    DIST=$(basename $imagename|cut -d- -f4)
+fi
 
 ##################################################################################
 ###################################################################################
@@ -328,10 +335,11 @@ DIST=$(basename $SOURCE|cut -d- -f4)
 ###################################################################################
 ###################################################################################
 
+$DATA_DIR=./config
+$CACHE=./cache
+
 trap on_exit EXIT
 trap on_exit INT
-
-
 
 generic-img-mount $SOURCE
 if test $? -ne 0;then
@@ -340,18 +348,13 @@ if test $? -ne 0;then
 fi
 CHROOT=$(basename -s .img $SOURCE)
 
-echo $CHROOT
-
-
 mkdir -p $CHROOT/install
-
-ls $DATA_DIR
-
-pwd
-
 cp -r $DATA_DIR/* $CHROOT/install/
 
-
+#rsync -ra  --size-only $CACHE/apt/ $CHROOT/var/cache/apt/archives/.
+mkdir -p ./log
+mkdir -p $CACHE/apt/
+cp -r $CACHE/apt/ $CHROOT/var/cache/apt/archives/.
 
 generic_dir_patch $CHROOT  > ./log/last-build.log
 RET="$?"
@@ -359,7 +362,6 @@ if test $RET -ne 0;then
     echo "could not patch \"$SOURCE\""
     exit 1
 fi
-
 
 ###################################################################################
 ###################################################################################
@@ -371,8 +373,11 @@ echo "info: compressing image ..."
 
 # clean chroot
 test -d $CHROOT/install && rm -r $CHROOT/install
+
+mkdir -p ./cache/apt/
+rsync -rav  --delete --size-only  $CHROOT/var/cache/apt/archives/ ./cache/apt/
 test -d $CHROOT/var/cache/apt/archives/ && rm -r $CHROOT/var/cache/apt/archives/
-mkdir $CHROOT/var/cache/apt/archives/
+mkdir -p $CHROOT/var/cache/apt/archives/
 
 
 # update some vlaues in /etc/puavo-image
