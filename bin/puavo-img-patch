@@ -30,10 +30,8 @@ ERROR=0
 
 CHECKLIST=""
 
-
 touch /etc/puavo-image/debs.list
 touch /etc/puavo-image/parts.list
-
 
 check(){
     if test $? = 0;then
@@ -71,7 +69,6 @@ if test -d /install/files.d;then
         echo "ok"                                                             1>&2
     fi
 fi
-
 
 #lists
 if test -d /install/lists.d;then
@@ -177,8 +174,6 @@ if test $CHROOT = "/";then
 else
     echo "/usr/local/bin/puavo-chroot-apply" | puavo-dir-chroot $CHROOT  
 fi
-
-
 }
 
 
@@ -188,7 +183,6 @@ CLASS=$(echo $CURRENT_IMAGE|cut -d- -f3)
 
 REPOSITORY=$(puavo-conf puavo.image.servers|xargs|cut -d\  -f1)
 GNUPG=""
-
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -298,20 +292,15 @@ else
     echo "info: you have no packages.debian file, you will not install any packages"
 fi
 
-
-
-
 echo $OSNAME $CLASS $REPOSITORY 
 
 exit
-
 
 # some paramter checks
 if [ $# -ne 1 ]; then
     echo ch "invalid number of arguments ($#), expected 1"
     exit 1
 fi
-
 
 
 SOURCE=$1
@@ -363,11 +352,6 @@ if test $RET -ne 0;then
     exit 1
 fi
 
-###################################################################################
-###################################################################################
-#                                we start compressing the image                        #
-###################################################################################
-###################################################################################
 echo
 echo "info: compressing image ..."
 
@@ -378,7 +362,6 @@ mkdir -p ./cache/apt/
 rsync -rav  --delete --size-only  $CHROOT/var/cache/apt/archives/ ./cache/apt/
 test -d $CHROOT/var/cache/apt/archives/ && rm -r $CHROOT/var/cache/apt/archives/
 mkdir -p $CHROOT/var/cache/apt/archives/
-
 
 # update some vlaues in /etc/puavo-image
 if ! test -f $CHROOT/etc/puavo-image/base_name;then
@@ -400,7 +383,6 @@ echo "$CLASS" > $CHROOT/etc/puavo-image/class
 #compose new image name
 VERSION=$(date +%Y-%m-%d-%H%M%S)
 IMAGE="${OSNAME}-${CLASS}-${DIST}-${VERSION}-amd64"
-
 
 #    make compressed image
 mksquashfs  $CHROOT ${IMAGE}.img -noappend -no-recovery
