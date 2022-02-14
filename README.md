@@ -1,4 +1,4 @@
-# Using PuavoOS with Custom PuavoOS-Packages
+# Extending Puavo Images
 
 This document describes the steps for using PuavoOS (https://puavo.org) with (self built) PuavoOS packages.
 
