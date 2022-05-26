@@ -1,12 +1,20 @@
 #!/bin/sh
 
-echo
-echo "info: compressing image ..."
 
 CHROOT="$1"
+OSNAME="$2"
+CLASS="$3"
+
+
+
+#compose new image name
+VERSION=$(date +%Y-%m-%d-%H%M%S)
+DIST="$(cat $CHROOT/etc/puavo-image/name | cut -d- -f4)"
+IMAGE="${OSNAME}-${CLASS}-${DIST}-${VERSION}-amd64"
+
 
 # clean chroot
-test -d $CHROOT/install && rm -r $CHROOT/install
+#test -d $CHROOT/install && rm -r $CHROOT/install
 
 #mkdir -p ./cache/apt/
 #rsync -rav  --delete --size-only  $CHROOT/var/cache/apt/archives/ ./cache/apt/
@@ -23,16 +31,10 @@ fi
 if ! test -f $CHROOT/etc/puavo-image/base_class;then
    cp $CHROOT/etc/puavo-image/class $CHROOT/etc/puavo-image/base_class
 fi
-echo "${IMAGE}.img" > $CHROOT/etc/puavo-image/name
-echo "$( cat $CHROOT/etc/puavo-image/base_release ) (${VERSION})" > $CHROOT/etc/puavo-image/release
-echo "$CLASS" > $CHROOT/etc/puavo-image/class
-echo "${IMAGE}.img" > $CHROOT/etc/puavo-image/name
-echo "$( cat $CHROOT/etc/puavo-image/release ) (${VERSION})">$CHROOT/etc/puavo-image/release
-echo "$CLASS" > $CHROOT/etc/puavo-image/class
 
-#compose new image name
-VERSION=$(date +%Y-%m-%d-%H%M%S)
-IMAGE="${OSNAME}-${CLASS}-${DIST}-${VERSION}-amd64"
+echo "${IMAGE}.img" > $CHROOT/etc/puavo-image/name
+echo "$(cat $CHROOT/etc/puavo-image/base_release) (${VERSION})" > $CHROOT/etc/puavo-image/release
+echo "$CLASS" > $CHROOT/etc/puavo-image/class
 
 #    make compressed image
 mksquashfs  $CHROOT ${IMAGE}.img -noappend -no-recovery

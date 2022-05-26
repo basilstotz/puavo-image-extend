@@ -5,26 +5,50 @@
 #    exec sudo $0 $@
 #fi
 
+UTILS="$(dirname $0)/../utils"
+
+
 on_exit(){
     #generic-img-mount --umount $SOURCE
     test -f $IMAGE.img && chown --reference ..  $IMAGE.img
 }
 
 
-generic_dir_patch(){
+puavo_mount(){
+    SOURCE=$1
+    
+    $UTILS/generic-img-mount $SOURCE
+    if test $? -ne 0;then
+       echo "could not mount \"$SOURCE\""
+       exit 1
+    fi
+    CHROOT=$(basename -s .img $SOURCE)
+    return $CHROOT
+}
+
+puavo_patch(){
     CHROOT=$1
     DATA=$2
     
     mkdir -p $CHROOT/install
     cp -r $DATA/* $CHROOT/install/
 
-    echo "/install/puavo-chroot-apply" | puavo-dir-chroot $CHROOT
+    echo "/install/puavo-chroot-apply" | $UTILS/puavo-dir-chroot $CHROOT
     STATUS=$?
 
     rm -r $CHROOT/install
 
     return $STATUS
 }
+
+puavo_image(){
+    CHROOT=$1
+    OSNAME=$2
+    CLASS=$3
+    
+    $UTILS/puavo-make-image $CHROOT $OSNAME $CLASS
+}
+
 
 
 CURRENT_IMAGE=$(cat /etc/puavo-image/name)
@@ -174,35 +198,19 @@ fi
 ###################################################################################
 ###################################################################################
 
-$DATA_DIR=./config
-$CACHE=./cache
+$DATA=./config
+
 
 trap on_exit EXIT
 trap on_exit INT
 
-generic-img-mount $SOURCE
-if test $? -ne 0;then
-    echo "could not mount \"$SOURCE\""
-    exit 1
+
+CHROOT=$(puavo_mount $SOURCE)
+
+puavo_patch $CHROOT  $DATA > ./last-build.log
+
+if test $? = 0; then
+    puavo_image $CHROOT $OSNAME $CLASS
 fi
-
-CHROOT=$(basename -s .img $SOURCE)
-
-#*rsync -ra  --size-only $CACHE/apt/ $CHROOT/var/cache/apt/archives/.
-#mkdir -p $CACHE/apt/
-#cp -r $CACHE/apt/ $CHROOT/var/cache/apt/archives/.
-
-mkdir -p ./log
-generic_dir_patch $CHROOT  $DATA_DIR > ./log/last-build.log
-RET="$?"
-if test $RET -ne 0;then
-    echo "could not patch \"$SOURCE\""
-    exit 1
-fi
-
-puavo-make-image $CHROOT
-
-
-on_exit
 
 exit 0
