@@ -12,168 +12,18 @@ on_exit(){
 
 
 generic_dir_patch(){
-
-
-    $CHROOT=$1
+    CHROOT=$1
+    DATA=$2
     
-#copy chroot binary to chroot
-cat << 'EOF'  > $CHROOT/usr/local/bin/puavo-chroot-apply
-#!/bin/sh
+    mkdir -p $CHROOT/install
+    cp -r $DATA/* $CHROOT/install/
 
-echo "**************************************************************" 1>&2
-echo "*                                                            *" 1>&2
-echo "*                     Hello Chroot                           *" 1>&2
-echo "*                                                            *" 1>&2
-echo "**************************************************************" 1>&2
-UPDATED=1
-ERROR=0
+    echo "/install/puavo-chroot-apply" | puavo-dir-chroot $CHROOT
+    STATUS=$?
 
-CHECKLIST=""
+    rm -r $CHROOT/install
 
-touch /etc/puavo-image/debs.list
-touch /etc/puavo-image/parts.list
-
-check(){
-    if test $? = 0;then
-        echo "  ok"
-    else
-        CHECKLIST="$CHECKLIST $1"
-	echo "  error!"
-	ERROR=1
-    fi
-}
-
-#bin
-if test -d /install/bin.d;then
-    if test -n "$(ls /install/bin.d|grep .sh)";then
-        echo "**************************************************************" 1>&2
-        echo "                          bin                                *" 1>&2
-        echo "**************************************************************" 1>&2
-        for B in $(ls /install/bin.d);do
-	    if test -x /install/bin.d/$B;then
-                echo -n $B                                                    1>&2
-		/install/bin.d/$B
-		check  $B                                                       1>&2
-	    fi 
-        done
-    fi
-fi
-
-#files
-if test -d /install/files.d;then
-    if test -n "$(ls /install/files.d/)";then
-	echo "**************************************************************" 1>&2
-        echo "                         files                               *" 1>&2
-        echo "**************************************************************" 1>&2
-        cp -r /install/files.d/* /
-        echo "ok"                                                             1>&2
-    fi
-fi
-
-#lists
-if test -d /install/lists.d;then
-    LISTS="$(ls /install/lists.d|grep .list|grep -v off|xargs)"
-    if test -n "$LISTS";then
-        echo "**************************************************************" 1>&2
-        echo "                         lists                               *" 1>&2
-        echo "**************************************************************" 1>&2
-        echo "$LISTS :"							      1>&2
-        apt-get update
-	UPDATED=0
-        PAKS=""
-        for L in $LISTS;do
-            PAKS="$PAKS $(cat /install/lists.d/$L|xargs) "
-        done
-        echo $PAKS | fmt                                                      1>&2
-        apt-get -y install $PAKS
-	check  "lists"                                                        1>&2
-    fi
-
-fi
-
-#debs
-if test -d /install/debs.d;then
-    if test -n "$(ls /install/debs.d|grep .deb)";then
-        echo "**************************************************************" 1>&2
-        echo "                         debs                                *" 1>&2
-        echo "**************************************************************" 1>&2
-        for D in $(ls /install/debs.d/*.deb);do
-             echo $(basename $D)                                              1>&2
-
-             echo "$(basename $D | cut -f1 -d_ ) " >> /etc/puavo-image/debs.list
-
-             dpkg -i $D
-             #check
-        done
-        if test $UPDATED = 1;then
-	    apt-get update
-	    UPDATED=0
-	fi
-        echo -n "*debs  dependencies*"                                         1>&2
-	apt-get -y -f install
-	check "*debs dependencies*"                                            1>&2
-    fi
-fi
-
-#parts
-if test -d /install/parts.d;then
-    if test -n "$(ls /install/parts.d/)";then
-        echo "**************************************************************" 1>&2
-        echo "                         parts                               *" 1>&2
-        echo "**************************************************************" 1>&2
-	if test $UPDATED = 1;then
-	    apt-get update
-	fi
-        for P in $(ls /install/parts.d/);do
-            if test -x /install/parts.d/$P/install.sh;then
-                 echo -n $P                                                   1>&2
-
-                 echo "$P " >> /etc/puavo-image/parts.list
-
-
-                 /install/parts.d/$P/install.sh
-  	         check $P                                                     1>&2
-            fi
-        done
-        echo -n "*parts dependencies*"                                           1>&2
-	apt-get -y -f install
-	check "*parts dependencies*"                                          1>&2
-    fi
-fi
-
-echo "**************************************************************" 1>&2
-echo "*                                                            *" 1>&2
-echo "*                     Goodbye Chroot                         *" 1>&2
-echo "*                                                            *" 1>&2
-echo "**************************************************************" 1>&2
-echo                                                                  1>&2
-
-if test $ERROR = 0;then
-    echo "info: chroot ends successfully"                             1>&2
-else
-    echo "error(s) occurred in:"                                      1>&2
-    echo $CHECKLIST|fmt                                               1>&2
-fi
-echo                                                                  1>&2
-
-#echo                                                                  1>&2
-#echo "**************************************************************" 1>&2
-#echo "**************************************************************" 1>&2
-
-exit $ERROR
-EOF
-chmod +x $CHROOT/usr/local/bin/puavo-chroot-apply
-
-
-echo "*********************************************333
-cat /usr/local/bin/puavo-chroot-apply
-echo "*********************************************333
-
-if test $CHROOT = "/";then
-    /usr/local/bin/puavo-chroot-apply
-else
-    echo "/usr/local/bin/puavo-chroot-apply" | puavo-dir-chroot $CHROOT  
-fi
+    return $STATUS
 }
 
 
@@ -294,7 +144,6 @@ fi
 
 echo $OSNAME $CLASS $REPOSITORY 
 
-exit
 
 # some paramter checks
 if [ $# -ne 1 ]; then
@@ -302,6 +151,7 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
+exit
 
 SOURCE=$1
 if ! test -f $SOURCE; then
@@ -335,57 +185,23 @@ if test $? -ne 0;then
     echo "could not mount \"$SOURCE\""
     exit 1
 fi
+
 CHROOT=$(basename -s .img $SOURCE)
 
-mkdir -p $CHROOT/install
-cp -r $DATA_DIR/* $CHROOT/install/
+#*rsync -ra  --size-only $CACHE/apt/ $CHROOT/var/cache/apt/archives/.
+#mkdir -p $CACHE/apt/
+#cp -r $CACHE/apt/ $CHROOT/var/cache/apt/archives/.
 
-#rsync -ra  --size-only $CACHE/apt/ $CHROOT/var/cache/apt/archives/.
 mkdir -p ./log
-mkdir -p $CACHE/apt/
-cp -r $CACHE/apt/ $CHROOT/var/cache/apt/archives/.
-
-generic_dir_patch $CHROOT  > ./log/last-build.log
+generic_dir_patch $CHROOT  $DATA_DIR > ./log/last-build.log
 RET="$?"
 if test $RET -ne 0;then
     echo "could not patch \"$SOURCE\""
     exit 1
 fi
 
-echo
-echo "info: compressing image ..."
+puavo-make-image $CHROOT
 
-# clean chroot
-test -d $CHROOT/install && rm -r $CHROOT/install
-
-mkdir -p ./cache/apt/
-rsync -rav  --delete --size-only  $CHROOT/var/cache/apt/archives/ ./cache/apt/
-test -d $CHROOT/var/cache/apt/archives/ && rm -r $CHROOT/var/cache/apt/archives/
-mkdir -p $CHROOT/var/cache/apt/archives/
-
-# update some vlaues in /etc/puavo-image
-if ! test -f $CHROOT/etc/puavo-image/base_name;then
-   cp $CHROOT/etc/puavo-image/name $CHROOT/etc/puavo-image/base_name
-fi
-if ! test -f $CHROOT/etc/puavo-image/base_release;then
-   cp $CHROOT/etc/puavo-image/release $CHROOT/etc/puavo-image/base_release
-fi
-if ! test -f $CHROOT/etc/puavo-image/base_class;then
-   cp $CHROOT/etc/puavo-image/class $CHROOT/etc/puavo-image/base_class
-fi
-echo "${IMAGE}.img" > $CHROOT/etc/puavo-image/name
-echo "$( cat $CHROOT/etc/puavo-image/base_release ) (${VERSION})" > $CHROOT/etc/puavo-image/release
-echo "$CLASS" > $CHROOT/etc/puavo-image/class
-echo "${IMAGE}.img" > $CHROOT/etc/puavo-image/name
-echo "$( cat $CHROOT/etc/puavo-image/release ) (${VERSION})">$CHROOT/etc/puavo-image/release
-echo "$CLASS" > $CHROOT/etc/puavo-image/class
-
-#compose new image name
-VERSION=$(date +%Y-%m-%d-%H%M%S)
-IMAGE="${OSNAME}-${CLASS}-${DIST}-${VERSION}-amd64"
-
-#    make compressed image
-mksquashfs  $CHROOT ${IMAGE}.img -noappend -no-recovery
 
 on_exit
 
