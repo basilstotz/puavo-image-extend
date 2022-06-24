@@ -1,7 +1,0 @@
-#!/bin/sh
-
-for pcl in $(cat /etc/puavo-conf/puavo-conf.extra); do
-    puavo-conf --set-mode add $pcl  ""
-done
-
-
