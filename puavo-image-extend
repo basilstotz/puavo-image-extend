@@ -14,7 +14,7 @@ on_exit(){
 }
 
 help(){
-    echo "Usage: $(basename $0) [options] datadir source_image"
+    echo "Usage: $(basename $0) [options] patch_dir source_image"
     echo
     echo "Patch a PuavoOS image and compress a new image."
     echo
@@ -89,10 +89,12 @@ puavo_patch(){
     PLACE=opt/puavo-os-extra
 
     #copy data to chroot
+    echo "info: copy patch to chroot"
     mkdir -p $CHROOT/$PLACE
     cp -r $1/* $CHROOT/$PLACE
 
     #copy cached apt to chroot
+    echo "info: copy apt from cache to chroot"
     rsync -ra  --size-only ./cache/apt/ $CHROOT/var/cache/apt/archives/.
 
     # do chroot
@@ -103,7 +105,9 @@ puavo_patch(){
     fi
 
     # copyback apt and clean chroot
-    rsync -ra  --delete --size-only  $CHROOT/var/cache/apt/archives/ ./cache/apt/
+    echo "info: update apt cache"
+    rsync -rav  --delete --size-only  $CHROOT/var/cache/apt/archives/ ./cache/apt/
+    echo "info: remove apt in chroot"
     rm -r $CHROOT/var/cache/apt/archives/*
 
     #rm -r $CHROOT/opt/puavo-os-extra
@@ -144,9 +148,15 @@ puavo_image(){
 ###################################################################################
 ###################################################################################
 
-CURRENT_IMAGE=$(cat /etc/puavo-image/name)
-OSNAME=$(echo $CURRENT_IMAGE|cut -d- -f1-2)
-CLASS=$(echo $CURRENT_IMAGE|cut -d- -f3)
+if test -f /etc/puavo-image/name; then
+    CURRENT_IMAGE=$(cat /etc/puavo-image/name)
+    OSNAME=$(echo $CURRENT_IMAGE|cut -d- -f1-2)
+    CLASS=$(echo $CURRENT_IMAGE|cut -d- -f3)
+fi
+
+test "$OSNAME" = "opinsys-os" -o "$OSNAME"= "" && OSNAME="puavo-os"
+test "$CLASS" = "" && CLASS="standard"
+
 
 while [ $# -gt 0 ]; do
     case $1 in
