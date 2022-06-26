@@ -112,7 +112,7 @@ puavo_patch(){
     echo "info: remove apt in chroot"                                                    1>&2
     rm -r $CHROOT/var/cache/apt/archives/*
 
-    rm -r $CHROOT/$PLACE
+    rm -r $CHROOT/$PLACE/*
     cp -r $1/* $CHROOT/$PLACE
     
 }
