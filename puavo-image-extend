@@ -7,17 +7,18 @@ fi
 
 
 on_exit(){
-    puavo_umount $SOURCE
-    test -f $IMAGE.img && chown --reference ..  $IMAGE.img
+    do_umount $SOURCE
+    test -f $IMAGE && chown --reference ..  $IMAGE
     test -d ./log/ && chown --recursive --reference ..  ./log/
     
 }
 
-help(){
+do_help(){
     echo "Usage: $(basename $0) [options] patch_dir source_image"
     echo
-    echo "Patch a PuavoOS image and compress a new image."
+    echo "Patch a  squashfs image and compress a new image."
     echo
+    echo "Some spezials for PuavoOS:" 
     echo "    -o, --osname <osname> (default: $OSNAME)"
     echo "    -c, --class <class> (default: $CLASS)"
     echo "    -h, --help"
@@ -25,7 +26,7 @@ help(){
     exit 0
 }
 
-puavo_umount(){
+do_umount(){
     IMG=$1
     
     #    MNT=$(basename -s .img $IMG)
@@ -46,7 +47,7 @@ puavo_umount(){
 }
 
 
-puavo_mount(){
+do_mount(){
     IMG=$1
     
     puavo_umount $IMG
@@ -72,7 +73,7 @@ puavo_mount(){
     
 }
 
-puavo_chroot(){
+do_chroot(){
     mount -o bind /dev $CHROOT/dev
     mount -o bind /dev/pts $CHROOT/dev/pts
     mount -o bind /proc $CHROOT/proc
@@ -87,7 +88,7 @@ puavo_chroot(){
 }
 
 
-puavo_patch(){
+do_patch(){
     PLACE=opt/puavo-os-extra
 
     #copy data to chroot
@@ -101,7 +102,7 @@ puavo_patch(){
 
     # do chroot
     echo "info: enter chroot"                                                            1>&2
-    echo "run-parts --regex=\"^[0-9]{2}-.*$\" /$PLACE" | puavo_chroot $CHROOT
+    echo "run-parts --regex=\"^[0-9]{2}-.*$\" /$PLACE" | do_chroot $CHROOT
     if test $? -ne 0;then
        echo "could not patch \"$1\""                                                     1>&2
        exit 1
@@ -119,7 +120,7 @@ puavo_patch(){
     
 }
 
-puavo_image_name(){
+do_image_name(){
     #compose new image name
     VERSION=$(date +%Y-%m-%d-%H%M%S)
     if test -f $CHROOT/etc/puavo-image/name; then
@@ -130,7 +131,7 @@ puavo_image_name(){
     fi
 }
 
-puavo_image(){
+do_image(){
 
     # some specials only for puavo images: update some values in /etc/puavo-image
     if test -f $CHROOT/etc/puavo-image/name; then
@@ -178,7 +179,7 @@ while [ $# -gt 0 ]; do
     case $1 in
 	-h|--help)
 	    shift
-	    help
+	    do_help
 	    ;;
 	#config 
 	-o|--osname)
@@ -209,7 +210,7 @@ done
 if [ $# -ne 2 ]; then
     echo 
     echo "error: invalid number of arguments ($#), expected 2"
-    help
+    do_help
     exit 1
 fi
 
@@ -230,13 +231,13 @@ trap on_exit EXIT
 trap on_exit INT
 
 
-puavo_mount  $SOURCE
+do_mount  $SOURCE
 
-IMAGE=$(puavo_image_name)
+IMAGE=$(do_image_name)
 
-puavo_patch  $DATADIR > ./log/$IMAGE.log
+do_patch  $DATADIR > ./log/$IMAGE.log
 
-puavo_image
+do_image $IMAGE
 
 
 exit 0
