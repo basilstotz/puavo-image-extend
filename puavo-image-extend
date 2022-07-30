@@ -28,7 +28,8 @@ help(){
 puavo_umount(){
     IMG=$1
     
-    MNT=$(basename -s .img $IMG)
+    #    MNT=$(basename -s .img $IMG)
+    MNT=$(basename $IMG)
     #umount
     if mount|grep -q ./mnt/${MNT}.rofs;then
 	 sudo umount ./mnt/${MNT}.rofs    
@@ -49,7 +50,8 @@ puavo_mount(){
     IMG=$1
     
     puavo_umount $IMG
-    MNT=$(basename -s .img $IMG)
+    #    MNT=$(basename -s .img $IMG)
+    MNT=$(basename $IMG)
     #make mountpounts
     if ! test -d ${MNT}; then mkdir ${MNT};fi
     if ! test -d ./mnt/${MNT}.rofs; then mkdir -p ./mnt/${MNT}.rofs;fi
@@ -66,7 +68,7 @@ puavo_mount(){
        echo "could not mount \"$SOURCE\""
        exit 1
     fi
-    CHROOT=$(basename -s .img $1)
+    CHROOT=$(basename $1)
     
 }
 
@@ -118,30 +120,37 @@ puavo_patch(){
 }
 
 puavo_image_name(){
-   #compose new image name
-   VERSION=$(date +%Y-%m-%d-%H%M%S)
-   DIST="$(cat $CHROOT/etc/puavo-image/name | cut -d- -f4)"
-   echo "${OSNAME}-${CLASS}-${DIST}-${VERSION}-amd64"
+    #compose new image name
+    VERSION=$(date +%Y-%m-%d-%H%M%S)
+    if test -f $CHROOT/etc/puavo-image/name; then
+	DIST="$(cat $CHROOT/etc/puavo-image/name | cut -d- -f4)"
+	echo "${OSNAME}-${CLASS}-${DIST}-${VERSION}-amd64.img"
+    else
+	echo "$VERSION-$(basename $SOURCE)"
+    fi
 }
 
 puavo_image(){
-    # update some values in /etc/puavo-image
-    if ! test -f $CHROOT/etc/puavo-image/base_name;then
-       cp $CHROOT/etc/puavo-image/name $CHROOT/etc/puavo-image/base_name
-    fi
-    if ! test -f $CHROOT/etc/puavo-image/base_release;then
-       cp $CHROOT/etc/puavo-image/release $CHROOT/etc/puavo-image/base_release
-    fi
-    if ! test -f $CHROOT/etc/puavo-image/base_class;then
-       cp $CHROOT/etc/puavo-image/class $CHROOT/etc/puavo-image/base_class
-    fi
 
-    echo "${IMAGE}.img" > $CHROOT/etc/puavo-image/name
-    #echo "$(cat $CHROOT/etc/puavo-image/base_release) (${VERSION})" > $CHROOT/etc/puavo-image/release
-    echo "$CLASS" > $CHROOT/etc/puavo-image/class
+    # some specials only for puavo images: update some values in /etc/puavo-image
+    if test -f $CHROOT/etc/puavo-image/name; then
+	if ! test -f $CHROOT/etc/puavo-image/base_name;then
+	   cp $CHROOT/etc/puavo-image/name $CHROOT/etc/puavo-image/base_name
+	fi
+	if ! test -f $CHROOT/etc/puavo-image/base_release;then
+	   cp $CHROOT/etc/puavo-image/release $CHROOT/etc/puavo-image/base_release
+	fi
+	if ! test -f $CHROOT/etc/puavo-image/base_class;then
+	   cp $CHROOT/etc/puavo-image/class $CHROOT/etc/puavo-image/base_class
+	fi
 
+	echo "${IMAGE}" > $CHROOT/etc/puavo-image/name
+	#echo "$(cat $CHROOT/etc/puavo-image/base_release) (${VERSION})" > $CHROOT/etc/puavo-image/release
+	echo "$CLASS" > $CHROOT/etc/puavo-image/class
+    fi
+    
     #    make compressed image
-    mksquashfs  $CHROOT ${IMAGE}.img -noappend -no-recovery
+    mksquashfs  $CHROOT ${IMAGE} -noappend -no-recovery
   
     if test $? -ne 0;then
        echo "could not make image"
